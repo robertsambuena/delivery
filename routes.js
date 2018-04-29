@@ -7,6 +7,14 @@ const directions = require('./directions');
 router.post('/route', function (next) {
   const input = this.request.body;
 
+  if (!Array.isArray(input)) {
+    this.body = {
+      error: 'Invalid input'
+    }
+
+    return;
+  }
+
   this.body = {
 		'token': routeDB.saveQuery(input)
 	}
@@ -17,7 +25,7 @@ router.get('/route/:token', async function (next) {
 
   if (typeof query === 'undefined') {
     this.body = {
-      status: 'error',
+      status: 'failure',
       error: 'INVALID_TOKEN'
     }
     return;
@@ -35,6 +43,13 @@ router.get('/route/:token', async function (next) {
       total_distance: query.value.distance.value,
       total_time: query.value.duration.value
     }
+  } else {
+    this.body = {
+      status: 'failure',
+      error: query.value && query.value.message || 'undefined error'
+    }
+
+    return;
   }
 });
 

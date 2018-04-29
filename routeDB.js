@@ -9,7 +9,7 @@ let routeDB;
 
 /* workaround for when app starts while mongo's still loading in docker */
 const connectWithRetry = () => {
-  console.log('\n\n\n MongoDB connection with retry \n\n\n');
+  console.log('\n\n\n * * * * MongoDB connection with retry * * * * \n\n\n');
   return mongoClient.connect(MONGO_URL).then(initiateDB);
 };
 
@@ -24,7 +24,7 @@ function initiateDB (connection) {
   const db = connection.db('routeDB');
   routeDB = db.collection('routes');
 
-  console.log('\n\n\n ******** Database connection established \n\n\n');
+  console.log('\n\n\n * * * * Database connection established * * * * \n\n\n');
 }
 
 const db = {
