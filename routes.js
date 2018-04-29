@@ -11,13 +11,12 @@ router.post('/route', function (next) {
     this.body = {
       error: 'Invalid input'
     }
-
     return;
   }
 
   this.body = {
-		'token': routeDB.saveQuery(input)
-	}
+    'token': routeDB.saveQuery(input)
+  }
 });
 
 router.get('/route/:token', async function (next) {
@@ -48,7 +47,6 @@ router.get('/route/:token', async function (next) {
       status: 'failure',
       error: query.value && query.value.message || 'undefined error'
     }
-
     return;
   }
 });

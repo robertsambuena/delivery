@@ -11,7 +11,7 @@ router.use('/', route.routes());
 app
 	.use(logger())
 	.use(cors())
-  .use(bodyParser())
+	.use(bodyParser())
 	.use(router.routes())
 	.use(router.allowedMethods());
 
