@@ -22,7 +22,7 @@ router.post('/route', function (next) {
 router.get('/route/:token', async function (next) {
   const query = await routeDB.findQuery(this.params.token);
 
-  if (typeof query === 'undefined') {
+  if (!query) {
     this.body = {
       status: 'failure',
       error: 'INVALID_TOKEN'
