@@ -8,6 +8,7 @@ Mini delivery api
  - Run the following commands
 
 ``` javascript
+  export GOOGLE_MAPS_API_KEY=AIzaSyB_s9hZJa_VNxTh8XdQphIdn0dYU-TFq-U
   docker-compose build
   docker-compose up
 ```
