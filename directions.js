@@ -2,7 +2,6 @@
 
 const routeDB = require('./routeDB');
 const googleMapsClient = require('@google/maps').createClient({
-  key: 'AIzaSyB_s9hZJa_VNxTh8XdQphIdn0dYU-TFq-U',
   Promise: Promise
 });
 

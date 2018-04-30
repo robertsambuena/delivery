@@ -8,17 +8,20 @@ const MONGO_URL = "mongodb://mongo:27017";
 let routeDB;
 
 /* workaround for when app starts while mongo's still loading in docker */
-const connectWithRetry = () => {
+let connectWithRetry = function() {
   console.log('\n\n\n * * * * MongoDB connection with retry * * * * \n\n\n');
-  return mongoClient.connect(MONGO_URL).then(initiateDB);
+
+  return mongoClient.connect(MONGO_URL, function(err, connection) {
+    if (err) {
+      console.error('\n\n\nConnection failed, retrying in 5 seconds', err);
+      setTimeout(connectWithRetry, 5000);
+    } else {
+      initiateDB(connection);
+    }
+  });
 };
 
-mongoClient.connect(MONGO_URL).then(initiateDB)
-  .catch((err) => {
-    console.log(`\n\n\n MongoDB connection error: ${err} \n\n\n`);
-    /* retry after 5 seconds */
-    setTimeout(connectWithRetry, 5000);
-  })
+connectWithRetry();
 
 function initiateDB (connection) {
   const db = connection.db('routeDB');
