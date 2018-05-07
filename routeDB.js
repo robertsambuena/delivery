@@ -1,7 +1,6 @@
 'use strict';
 
-const TokenGenerator = require('uuid-token-generator');
-const tokgen = new TokenGenerator();
+const TokenGenerator = require('uuid/v4');
 const mongoClient = require("mongodb").MongoClient;
 const MONGO_URL = "mongodb://mongo:27017";
 
@@ -33,7 +32,7 @@ function initiateDB (connection) {
 const db = {
   saveQuery: function (input) {
     let query = {
-      token: tokgen.generate(),
+      token: TokenGenerator(),
       input: input,
       status: 'in progress'
     };
