@@ -5,27 +5,80 @@ const googleMapsClient = require('@google/maps').createClient({
   Promise: Promise
 });
 
+
+
 const directions = async function (coordinates, token) {
-  let origin = '';
-  let destination = '';
-  let waypoints = '';
-  let route;
+  let waypoints = [];
+  let outputRoute = null;
+
+  let STARTING_POINT = '';
+  let DROPOFF_POINTS = [];
+  let END_POINT = '';
 
   coordinates.forEach(function (point, index) {
     const pointStr = ''.concat(point[0],',',point[1]);
 
     if (index === 0) {
-      origin = pointStr;
-    } else if (index === coordinates.length - 1) {
-      destination = pointStr;
+      STARTING_POINT = pointStr;
     } else {
-      waypoints = (waypoints !== '' ? '|': '') + 'via:' + pointStr;
+      waypoints.push({ name: index, value: pointStr });
     }
-  })
+  });
 
-  route = await requestDirections(origin, destination, waypoints);
 
-  routeDB.updateQueryStatus(token, route.distance ? 'success': 'error', route);
+  let nextOrigin = STARTING_POINT;
+
+  /* loop on the waypoints to see which is closest to the next origin */
+  while (waypoints.length > 1) {
+    let shortestWpt = await findShortestDistance(STARTING_POINT, waypoints);
+
+    /* add the found shortest among the waypoints to the dropoff array */
+    DROPOFF_POINTS.push(shortestWpt.value);
+
+    /* remove the found waypoint from the selection of waypoints */
+    waypoints = waypoints.filter((e) => e.name !== shortestWpt.name);
+
+    /* found waypoint is the new STARTING_POINT by the next loop  */
+    nextOrigin = shortestWpt.value;
+  }
+
+  /* last waypoint remaining will be the destination */
+  END_POINT = waypoints[0].value;
+
+  /* format waypoint syntax */
+  DROPOFF_POINTS = DROPOFF_POINTS.map((pt) => pt = 'via:' + pt);
+  DROPOFF_POINTS = DROPOFF_POINTS.join('|');
+
+  /* get the direction values from now sorted inputs */
+  outputRoute = await requestDirections(STARTING_POINT, END_POINT, DROPOFF_POINTS);
+
+  routeDB.updateQueryStatus(token, outputRoute.distance ? 'success': 'error', outputRoute);
+}
+
+/* check whether which of the waypoints is closer to the origin */
+function findShortestDistance (origin, waypoints) {
+  let directionPromise = [];
+  const dropoffpoints = waypoints;
+
+  dropoffpoints.forEach(function (wpt) {
+    directionPromise.push(requestDirections(origin, wpt.value));
+  });
+
+  return Promise.all(directionPromise)
+    .then(function (routes) {
+      dropoffpoints.map(function (wpt, index) {
+        wpt.route = routes[index];
+        return wpt;
+      });
+      dropoffpoints.sort((a, b) => {
+        return Number(a.route.distance.value) - Number(b.route.distance.value)
+      });
+
+      return dropoffpoints[0];
+    })
+    .catch(function () {
+      return 'error';
+    });
 }
 
 function requestDirections (origin, destination, waypoints) {
