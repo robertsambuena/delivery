@@ -2,7 +2,7 @@
 
 const router = require('koa-router')();
 const routeDB = require('./routeDB');
-const directions = require('./directions');
+const solver = require('./solver');
 
 router.post('/route', function (next) {
   const input = this.request.body;
@@ -50,8 +50,7 @@ router.post('/route', function (next) {
   }
 
   const token = routeDB.saveQuery(input);
-
-  directions(input, token);
+  solver(input, token);
 
   this.body = {
     'token': token
@@ -77,8 +76,8 @@ router.get('/route/:token', async function (next) {
     this.body = {
       status: 'success',
       path: query.input,
-      total_distance: query.value.distance.value,
-      total_time: query.value.duration.value
+      total_distance: query.value.distance,
+      total_time: query.value.duration
     }
   } else {
     this.body = {

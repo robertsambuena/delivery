@@ -40,15 +40,23 @@ const db = {
     routeDB.insert(query);
     return query.token;
   },
-  updateQueryStatus: function (token, status, value) {
+  updateQueryStatus: function (token, coordinates, value) {
+    let status = typeof value === 'string' ? 'error': 'success';
+
+    let set = {
+      status: status,
+      value: value
+    };
+
+    if (coordinates) {
+      set.input = coordinates;
+    }
+
     let query = routeDB.findAndModify(
       { token: token },
       [],
       {
-        $set: {
-          status: status,
-          value: value
-        }
+        $set: set
       },
       { new: true }
     );
