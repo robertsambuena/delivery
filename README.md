@@ -1,5 +1,7 @@
 # delivery
 Mini delivery api
+ - Take in array of coordinates in `POST /route` and return the shortest distance to travel via `GET /route`
+
 
 ### How to install
 
@@ -12,6 +14,10 @@ Mini delivery api
   docker-compose build
   docker-compose up
 ```
+
+### How to test
+
+`npm run test`
 
 ### Sample input
 
