@@ -1,36 +1,36 @@
 'use strict';
 
 const routeDB = require('./routeDB');
-const googleMapsClient = require('@google/maps').createClient({
+const maps = require('@google/maps');
+const googleMapsClient = maps.createClient({
   Promise: Promise
 });
 
-const directions = async function (coordinates, token) {
-  let startingPoint = '';
-  let dropoffPoints = [];
-  let endPoint = '';
-  let totalValues = 0;
-  let status;
-  let points = [];
+const getDirections = async function (coordinates, token) {
+  let totalValues;
 
-  coordinates.forEach(function (point, index) {
-    if (index === 0) {
-      startingPoint = point;
-    } if (index === coordinates.length - 1) {
-      endPoint = point;
+  let route = coordinates.reduce((route, pt, i) => {
+    if (i === 0) {
+      route.start = pt;
+    } else if (i === coordinates.length - 1) {
+      route.end = pt;
     } else {
-      dropoffPoints.push(point);
+      route.wypt.push(pt);
     }
 
-    points.push(point.split(','));
+    return route;
+  }, {
+    start: null,
+    end: null,
+    wypt: []
   });
 
-  dropoffPoints = dropoffPoints.join('|');
+  route.wypt = route.wypt.join('|');
 
   /* get the direction values from now sorted inputs */
-  totalValues = await requestDirections(startingPoint, endPoint, dropoffPoints);
+  totalValues = await requestDirections(route.start, route.end, route.wypt);
 
-  routeDB.updateQueryStatus(token, points, totalValues);
+  return totalValues;
 }
 
 function requestDirections (origin, destination, waypoints) {
@@ -42,21 +42,24 @@ function requestDirections (origin, destination, waypoints) {
   };
 
   if (waypoints) {
-    opts.waypoints = waypoints;
+    opts.waypoints = 'optimize:true|' + waypoints;
   }
 
   return googleMapsClient.directions(opts)
     .asPromise()
     .then((response) => {
-      if (response.json.routes) {
-        return getTotalDistance(response.json.routes);
+      if (response.json.status === 'OK' && response.json.routes) {
+        let returnValue = getTotalDistance(response.json.routes);
+        returnValue.opts = opts;
+
+        return returnValue;
       }
 
-      return 'Error in googleMapsClient';
+      return 'Error in googleMapsClient: ' + response.json.status;
     })
     .catch((err) => {
       return err;
-    })
+    });
 }
 
 function getTotalDistance (routes) {
@@ -71,6 +74,7 @@ function getTotalDistance (routes) {
   }
 
   let legs = routes.legs;
+  let order = routes.waypoint_order;
 
   let distanceSum = 0;
   let durationSum = 0;
@@ -82,8 +86,12 @@ function getTotalDistance (routes) {
 
   return {
     distance: distanceSum,
-    duration: durationSum
+    duration: durationSum,
+    order: order
   }
 }
 
-module.exports = directions;
+module.exports = {
+  getDirections: getDirections,
+  googleMapsClient: googleMapsClient // exposed gmaps instance for testing
+};

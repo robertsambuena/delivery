@@ -1,10 +1,10 @@
 'use strict';
 
-const router = require('koa-router')();
 const routeDB = require('./routeDB');
 const solver = require('./solver');
+const services = {};
 
-router.post('/route', function (next) {
+services.setCoordinates = function () {
   const input = this.request.body;
   let err;
 
@@ -20,13 +20,19 @@ router.post('/route', function (next) {
     }
   }
 
+  if (input.length > 25) {
+    return this.body = {
+      error: 'Max number of coordinates exceeded'
+    }
+  }
+
   input.forEach(function (coor) {
     if (!Array.isArray(coor)) {
-      err = 'Coordinate is not an array';
+      return err = 'Coordinate is not an array';
     }
 
     if (coor.length !== 2) {
-      err = 'Incomplete values for latitude & longitude';
+      return err = 'Incomplete values for latitude & longitude';
     }
 
     let lat = Number(coor[0]);
@@ -41,7 +47,7 @@ router.post('/route', function (next) {
     }
 
     return !err;
-  })
+  });
 
   if (err) {
     return this.body = {
@@ -52,20 +58,19 @@ router.post('/route', function (next) {
   const token = routeDB.saveQuery(input);
   solver(input, token);
 
-  this.body = {
+  return this.body = {
     'token': token
   }
-});
+}
 
-router.get('/route/:token', async function (next) {
+services.getCoordinates = async function (ctx, next) {
   const query = await routeDB.findQuery(this.params.token);
 
   if (!query) {
-    this.body = {
+    return this.body = {
       status: 'failure',
       error: 'INVALID_TOKEN'
     }
-    return;
   }
 
   if (query.status === 'in progress') {
@@ -84,8 +89,10 @@ router.get('/route/:token', async function (next) {
       status: 'failure',
       error: query.value && query.value.message || 'undefined error'
     }
-    return;
   }
-});
 
-module.exports = router;
+  return this.body;
+}
+
+
+module.exports = services;
