@@ -17,6 +17,7 @@ Mini delivery api
 
 ### How to test
 
+`npm install`
 `npm run test`
 
 ### Sample input
